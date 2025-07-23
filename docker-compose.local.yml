@@ -1,20 +1,30 @@
 version: '3.8'
 services:
   backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: "no"
+    environment:
+      USER_ID: "${USER_ID:?}"
+      GROUP_ID: "${GROUP_ID:?}"
+    depends_on:
+      - postgres
     volumes:
       - ./backend:/app
       - /app/node_modules
     command: npm run start:dev
 
   frontend:
+    container_name: "${PROJECT_NAME:-frontend}"
     volumes:
-      - ./frontend:/app
+      - ./frontend:/backend
       - /app/node_modules
     command: npm run dev
 
   postgres:
-    image: postgres:15
-    container_name: postgres
+    image: postgres:17.5
+    container_name: "${PROJECT_NAME:-postgres}"
     restart: "no"
     ports:
       - '5432:5432'

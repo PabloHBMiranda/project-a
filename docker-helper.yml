@@ -1,0 +1,8 @@
+variables:
+  DOCKER_ENV: production
+
+scripts:
+  prod: "docker-compose up -d"
+  dev: "docker-compose rm -sf && docker-compose up --force-recreate"
+  recreate: "docker-compose rm -sf && docker-compose up -d"
+  remove_all: "docker-compose rm -sf"
