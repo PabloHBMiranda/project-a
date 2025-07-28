@@ -1,0 +1,12 @@
+###
+## Configurações globais da aplicação
+###
+
+# Limita a quantidade de requisições que podem ser feitas por um IP
+# Caso a regra seja acionada várias vezes por um IP ele será bloqueado pelo fail2ban
+# Documentação: https://www.nginx.com/blog/rate-limiting-nginx
+
+# Limite geral
+limit_req_zone $binary_remote_addr zone=limit_req_default:10m rate=30r/s;
+# Limite de requisição para arquivos estáticos
+limit_req_zone $binary_remote_addr zone=limit_req_static:10m rate=100r/s;

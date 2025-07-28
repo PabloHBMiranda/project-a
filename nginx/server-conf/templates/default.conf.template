@@ -1,0 +1,27 @@
+# Template para desenvolvimento e testes
+server {
+    listen      ${SERVER_PORT} default_server;
+    listen      ${SERVER_PORT_SSL} default_server ssl http2;
+    server_name ${SERVER_HOST};
+    access_log  /var/log/nginx/${SERVER_HOST}.access.log main;
+    error_log   /var/log/nginx/${SERVER_HOST}.error.log warn;
+
+    ssl_certificate      /etc/nginx/ssl/self-signed.crt;
+    ssl_certificate_key  /etc/nginx/ssl/self-signed.key;
+    ssl_session_timeout  1440m;
+
+    # Configurações para o Laravel e NextJS
+    include /etc/nginx/snippets/oraculo.nginx;
+    include /etc/nginx/snippets/telescope.nginx;
+}
+
+# Forca redirecionamento da porta 80 para a 443
+#server {
+#    listen ${SERVER_PORT} default_server;
+#    server_name ${SERVER_HOST};
+#
+#    location / {
+#        return 301 https://${SERVER_HOST}:${SERVER_PORT_SSL}$request_uri;
+#    }
+#}
+

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+HOSTS_FILE="/etc/hosts"
+
+remove_old_entry() {
+    local domain="$1"
+    sudo sed -i.bak "/[[:space:]]$domain$/d" "$HOSTS_FILE"
+}
+
+add_host_entry() {
+  local domain="$1"
+  local ip="127.0.0.1"
+
+  # Verifica se o domínio já existe no arquivo
+  if ! grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\s+$domain" "$HOSTS_FILE"; then
+      echo "Adicionando $domain ao $HOSTS_FILE..."
+      echo "$ip $domain" | sudo tee -a "$HOSTS_FILE" > /dev/null
+  fi
+}
+
+if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
+    mkdir -p "$PROJECT_ROOT/data"
+
+    BRANCH_NAME="main"
+    export BRANCH_NAME
+
+    # Inicializa o .env do Laravel
+    if [[ ! -f "$PROJECT_ROOT/backend/.env" && -f "$PROJECT_ROOT/backend/.env.example" ]]; then
+        cp -a "$PROJECT_ROOT/backend/.env.example" "$PROJECT_ROOT/backend/.env"
+        GENERATE_BACKEND_KEYS="yes"
+    fi
+
+    # Evita que alguns comandos sejam executados mais de uma vez
+    if ! [[ "${args[0]}" =~ ^(build|composer|yarn)$ ]]; then
+
+        ###
+        ## Frontend
+        ###
+        # Instala as dependências do Node usado o yarn
+        if [[ ! -d "$PROJECT_ROOT/frontend/node_modules/" ]]; then
+            docker-compose run --rm frontend yarn
+        fi
+    fi
+
+    ###
+    ## Geral
+    ###
+
+    remove_old_entry "$BACKEND_DOMAIN"
+    remove_old_entry "$FRONTEND_DOMAIN"
+    add_host_entry "$BACKEND_DOMAIN"
+    add_host_entry "$FRONTEND_DOMAIN"
+
+    # Gera as chaves para a conexão SSL
+    if [[ ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" || ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt" ]]; then
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -subj "/C=BR/ST=GO/L=Goiânia/O=NúcleoGov/CN=$SERVER_HOST/emailAddress=contato@$SERVER_HOST" \
+            -keyout "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" -out "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt"
+    fi
+
+    # Habilita o novo formato de build do docker
+    export DOCKER_BUILDKIT=1
+fi

@@ -1,0 +1,7 @@
+###
+## Define se o navegador aceita webp
+###
+map $http_accept $webp_ext {
+    default "";
+    "~*webp" ".webp";
+}

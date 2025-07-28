@@ -1,0 +1,8 @@
+###
+## Define a variável $real_scheme com o valor passado pelo proxy no cabeçalho X-Forwarded-Proto(se houver), assumindo como padrão $scheme.
+## Semelhante a como o módulo HttpRealIp trata o X-Forwarded-For.
+###
+map $http_x_forwarded_proto $real_scheme {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}

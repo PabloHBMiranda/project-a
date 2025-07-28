@@ -1,0 +1,16 @@
+
+location ~ ^/(telescope|vendor/telescope) {
+    # Mídias no backend
+    location ~* ^.+\.(css|js|jpeg|jpg|png|gif|bmp|ico|svg|svgz|eot|otf|ttf|woff|woff2|webp|zip|tgz|tar|gz|rar|bz2|doc|xls|ppt|pdf|mp4|ogg|ogv|webm)$ {
+        expires       max;
+        access_log    off;
+        log_not_found off;
+        add_header    Cache-Control "public";
+
+        include /etc/nginx/snippets/proxy.nginx;
+        proxy_pass http://oraculo-backend:8000;
+    }
+
+    include /etc/nginx/snippets/proxy.nginx;
+    proxy_pass http://oraculo-backend:8000;
+}

@@ -1,0 +1,5 @@
+# Verifica o tipo de entrada recebida
+map $http_upgrade $type {
+    default "web";
+    websocket "ws";
+}

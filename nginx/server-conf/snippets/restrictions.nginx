@@ -1,0 +1,10 @@
+# Nega todas as tentativas de acesso a arquivos ocultos, como .htaccess, .htpasswd, .DS_Store... Mas permite o well-known para o Let's Encrypt
+location ~ /\.(?!well-known).* {
+    deny all;
+}
+
+# Nega o acesso a arquivos comuns ou que podem ter sido deixados na public durante o desenvolvimento
+location ~ (\.ini|\.sql|\.log|logs\.txt|composer\.json|composer\.lock|manifest\.json|dbs_admin_development\.json|dbs_admin_online\.json|blazar-manifest\.json|custom-manifest\.json|blazar-manifest\.override\.json)$ {
+    deny    all;
+    return  403;
+}

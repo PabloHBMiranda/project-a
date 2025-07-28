@@ -1,28 +1,50 @@
-# ===============================
-# 1. Stage: Dependências
-# ===============================
-FROM node:22-alpine AS deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
+# Etapa base (com pacotes extras)
+FROM node:22 AS base
 
-# ===============================
-# 2. Stage: Build
-# ===============================
-FROM node:20-alpine AS builder
-WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y vim socat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Define diretório de trabalho
+RUN mkdir -p /usr/src/app
+
+WORKDIR /usr/src/app
+
+# Etapa builder
+FROM base AS builder
+
+# Copia apenas arquivos de dependências primeiro (cache eficiente)
+COPY package.json yarn.lock ./
+
+# Instala dependências incluindo devDependencies
+RUN yarn install --frozen-lockfile
+
+# Copia o restante do código
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
-RUN npm run build
 
-# ===============================
-# 3. Stage: Produção
-# ===============================
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-RUN npm install --omit=dev
-EXPOSE 3000
-CMD ["npm", "run", "start:prod"]
+# Copia .env (se necessário)
+COPY .env ./
+
+# Build do projeto
+RUN yarn build
+
+# Etapa final (produção)
+FROM base AS production
+
+WORKDIR /usr/src/app
+
+# Copia package.json e yarn.lock
+COPY package.json yarn.lock ./
+
+# Instala apenas dependências de produção
+RUN yarn install --frozen-lockfile --production
+
+# Copia apenas dist e arquivos necessários
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Exposição da porta
+EXPOSE 3001
+
+# Comando para rodar a aplicação
+CMD ["node", "dist/main.js"]
