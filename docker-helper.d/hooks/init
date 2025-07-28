@@ -1,30 +1,12 @@
 #!/usr/bin/env bash
 
-HOSTS_FILE="/etc/hosts"
-
-remove_old_entry() {
-    local domain="$1"
-    sudo sed -i.bak "/[[:space:]]$domain$/d" "$HOSTS_FILE"
-}
-
-add_host_entry() {
-  local domain="$1"
-  local ip="127.0.0.1"
-
-  # Verifica se o domínio já existe no arquivo
-  if ! grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\s+$domain" "$HOSTS_FILE"; then
-      echo "Adicionando $domain ao $HOSTS_FILE..."
-      echo "$ip $domain" | sudo tee -a "$HOSTS_FILE" > /dev/null
-  fi
-}
-
 if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
     mkdir -p "$PROJECT_ROOT/data"
 
     BRANCH_NAME="main"
     export BRANCH_NAME
 
-    # Inicializa o .env do Laravel
+    # Inicializa o .env do NestJS
     if [[ ! -f "$PROJECT_ROOT/backend/.env" && -f "$PROJECT_ROOT/backend/.env.example" ]]; then
         cp -a "$PROJECT_ROOT/backend/.env.example" "$PROJECT_ROOT/backend/.env"
         GENERATE_BACKEND_KEYS="yes"
@@ -32,7 +14,6 @@ if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
 
     # Evita que alguns comandos sejam executados mais de uma vez
     if ! [[ "${args[0]}" =~ ^(build|composer|yarn)$ ]]; then
-
         ###
         ## Frontend
         ###
@@ -46,16 +27,42 @@ if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
     ## Geral
     ###
 
-    remove_old_entry "$BACKEND_DOMAIN"
-    remove_old_entry "$FRONTEND_DOMAIN"
-    add_host_entry "$BACKEND_DOMAIN"
-    add_host_entry "$FRONTEND_DOMAIN"
+    if [[ "$SERVER_TYPE" == "nginx" ]]; then
+    # Gera as chaves para a conexão SSL do Nginx
+      if [[ ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" || ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt" ]]; then
+          openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+              -subj "/C=BR/ST=GO/L=Goiânia/O=NúcleoGov/CN=$SERVER_HOST/emailAddress=contato@$SERVER_HOST" \
+              -keyout "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" -out "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt"
+      fi
+    else
+      # Gera as chaves para a conexão SSL do Traefik
+      TRAEFIK_DIR="$PROJECT_ROOT/traefik"
+      CERTS_DIR="$TRAEFIK_DIR/certs"
+      CERT_FILE="$CERTS_DIR/cert.pem"
+      KEY_FILE="$CERTS_DIR/key.pem"
 
-    # Gera as chaves para a conexão SSL
-    if [[ ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" || ! -f "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt" ]]; then
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -subj "/C=BR/ST=GO/L=Goiânia/O=NúcleoGov/CN=$SERVER_HOST/emailAddress=contato@$SERVER_HOST" \
-            -keyout "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" -out "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt"
+      mkdir -p "$CERTS_DIR"
+
+      if ! command -v mkcert &> /dev/null; then
+          echo "mkcert não encontrado. Instalando..."
+          sudo apt update
+          sudo apt install -y libnss3-tools curl
+          MKCERT_VERSION="v1.4.4"
+          curl -LO "https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-amd64"
+          sudo mv "mkcert-${MKCERT_VERSION}-linux-amd64" /usr/local/bin/mkcert
+          sudo chmod +x /usr/local/bin/mkcert
+      fi
+
+      if [ ! -d "$HOME/.local/share/mkcert" ] && [ ! -d "$HOME/Library/Application Support/mkcert" ]; then
+          echo "Configurando CA local do mkcert..."
+          mkcert -install
+      fi
+
+      if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
+          echo "Gerando certificados para $BACKEND_DOMAIN e $FRONTEND_DOMAIN..."
+          mkcert -cert-file "$CERT_FILE" -key-file "$KEY_FILE" "$BACKEND_DOMAIN" "$FRONTEND_DOMAIN"
+          echo "Certificados gerados em $CERTS_DIR"
+      fi
     fi
 
     # Habilita o novo formato de build do docker

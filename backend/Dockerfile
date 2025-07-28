@@ -2,9 +2,14 @@
 FROM node:22 AS base
 
 RUN apt-get update \
-    && apt-get install -y vim socat \
+    && apt-get install -y lsb-release dnsutils gosu curl libpng-dev libonig-dev libxml2-dev libpq-dev libsqlite3-dev libzip-dev \
+    zip unzip supervisor rsync logrotate vim nginx cron rsyslog ffmpeg socat \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -sS https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /etc/apt/trusted.gpg.d/ACCC4CF8.asc \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y postgresql-client-17
 
 # Define diretório de trabalho
 RUN mkdir -p /usr/src/app

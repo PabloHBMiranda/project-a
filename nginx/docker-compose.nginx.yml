@@ -1,0 +1,57 @@
+services:
+  backend:
+    volumes:
+      # Volumes de dados
+      - ./backend:/var/www/html
+      # Volumes de configurações
+      - ./backend/server-conf/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh
+      - ./backend/server-conf/supervisord.conf:/etc/supervisor/supervisord.conf
+      - ./backend/server-conf/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./backend/server-conf/nginx/conf.d/10_real_scheme.conf:/etc/nginx/conf.d/10_real_scheme.conf
+      - ./backend/server-conf/nginx/sites-available/default.conf:/etc/nginx/sites-available/default.conf
+  #      - ./data/dev/cache:/.cache
+  #      - ./data/dev/local:/.local
+
+  frontend:
+    environment:
+      DEV_MODE: "yes"
+      WEBSERVER_NAME: "${WEBSERVER_NAME:-nginx}"
+      SERVER_PORT: "${SERVER_PORT:-9001}"
+      SERVER_PORT_SSL: "${SERVER_PORT_SSL:-9000}"
+
+  nginx:
+    image: "${PROJECT_NAME}/nginx:${NGINX_IMAGE_VERSION}"
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: "${PROJECT_NAME}-nginx"
+    restart: "no"
+    depends_on:
+      - backend
+      - frontend
+      - postgres
+    environment:
+      NGINX_ENVSUBST_OUTPUT_DIR: "/etc/nginx/sites-enabled"
+      SERVER_HOST: "${SERVER_HOST:-localhost}"
+      SERVER_PORT: "${SERVER_PORT:-9001}"
+      SERVER_PORT_SSL: "${SERVER_PORT_SSL:-9000}"
+    volumes:
+      # Volumes de dados
+      - ./nginx/logs:/var/log/nginx
+      # Volumes de configurações
+      - ./nginx/server-conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/server-conf/conf.d:/etc/nginx/conf.d
+      - ./nginx/server-conf/sites-available:/etc/nginx/sites-available
+      - ./nginx/server-conf/sites-enabled:/etc/nginx/sites-enabled
+      - ./nginx/server-conf/snippets:/etc/nginx/snippets
+      - ./nginx/server-conf/ssl:/etc/nginx/ssl
+      - ./nginx/server-conf/templates/default.conf.template:/etc/nginx/templates/default.conf.template
+    expose:
+      - "${SERVER_PORT:-9001}"
+      - "${SERVER_PORT_SSL:-9000}"
+    ports:
+      - "${SERVER_PORT:-9001}:${SERVER_PORT:-9001}"
+      - "${SERVER_PORT_SSL:-9000}:${SERVER_PORT_SSL:-9000}"
+    command: [ "nginx-debug", "-g", "daemon off;" ]
+    networks:
+      - default

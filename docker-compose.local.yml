@@ -7,12 +7,11 @@ services:
     environment:
       USER_ID: "${USER_ID:?}"
       GROUP_ID: "${GROUP_ID:?}"
-      BACKEND_PORT: "${BACKEND_PORT:-3001}"
     depends_on:
       - postgres
     volumes:
       - ./backend:/usr/src/app
-    command: npm run start:dev
+    command: yarn run start:dev
     networks:
       - default
 
@@ -20,14 +19,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      DEV_MODE: "yes"
-      WEBSERVER_NAME: "${WEBSERVER_NAME:-nginx}"
-      SERVER_PORT: "${SERVER_PORT:-9001}"
-      SERVER_PORT_SSL: "${SERVER_PORT_SSL:-9000}"
+    restart: "no"
     volumes:
       - ./frontend:/usr/src/app
     command: [ "yarn", "dev" ]
+    networks:
+      - default
 
   postgres:
     image: postgres:17.5
@@ -41,20 +38,6 @@ services:
       - ./data/postgres-${BRANCH_NAME:-main}:/var/lib/postgresql/data
     ports:
       - "${DB_PORT_EXTERNAL:-5432}:5432"
-    networks:
-      - default
-
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: "${PROJECT_NAME}-nginx"
-    restart: "no"
-    ports:
-      - "80:80"    # HTTP
-      - "81:81"    # Painel NPM
-      - "443:443"  # HTTPS
-    volumes:
-      - ./npm/data:/data
-      - ./npm/letsencrypt:/etc/letsencrypt
     networks:
       - default
 

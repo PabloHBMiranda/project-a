@@ -187,6 +187,12 @@ get_docker_compose_files() {
         compose_files+=":$PROJECT_ROOT/docker-compose.override.yaml"
     fi
 
+    if [[ -f "$PROJECT_ROOT/$SERVER_TYPE/docker-compose.$SERVER_TYPE.yml" ]]; then
+            compose_files+=":$PROJECT_ROOT/$SERVER_TYPE/docker-compose.$SERVER_TYPE.yml"
+        elif [[ -f "$PROJECT_ROOT/$SERVER_TYPE/docker-compose.$SERVER_TYPE.yaml" ]]; then
+            compose_files+=":$PROJECT_ROOT/$SERVER_TYPE/docker-compose.$SERVER_TYPE.yaml"
+    fi
+
     echo "$compose_files"
 }
 
@@ -244,10 +250,30 @@ if [[ "$DOCKER_ENV" && -f "$PROJECT_ROOT/.env.$DOCKER_ENV" ]]; then
     source <(sed 's/\r//g' "$PROJECT_ROOT/.env.$DOCKER_ENV" | grep -Ev "^(DHELPER_|PROJECT_ROOT=|DOCKER_ENV=)" | sed -E -n "s/[^#]+/export &/ p")
 fi
 
+# Load .env.versions, for versions images
+if [[ -f "$PROJECT_ROOT/.env.versions" ]]; then
+    source <(sed 's/\r//g' "$PROJECT_ROOT/.env.versions" | sed -E -n "s/[^#]+/export &/ p")
+fi
+
+# Load .env.versions, for versions images
+if [[ "$DOCKER_ENV" && -f "$PROJECT_ROOT/.env.versions" ]]; then
+    source <(sed 's/\r//g' "$PROJECT_ROOT/.env.versions" | sed -E -n "s/[^#]+/export &/ p")
+fi
+
 # Load the rest of the variables from ".env"
 if [[ -f "$PROJECT_ROOT/.env" ]]; then
     source <(sed 's/\r//g' "$PROJECT_ROOT/.env" | grep -Ev "^(DHELPER_|PROJECT_ROOT=|DOCKER_ENV=)" | sed -E -n "s/[^#]+/export &/ p")
 fi
+
+# Load variables from .env.$SERVER_TYPE (nginx|traefik)
+if [[ -f "$PROJECT_ROOT/$SERVER_TYPE/.env.$SERVER_TYPE" ]]; then
+    source <(
+        sed 's/\r$//' "$PROJECT_ROOT/$SERVER_TYPE/.env.$SERVER_TYPE" | \
+        grep -Ev '^(#|$|DHELPER_|PROJECT_ROOT=|DOCKER_ENV=|SERVER_TYPE=)' | \
+        sed -E 's/^/export /'
+    )
+fi
+
 
 # List of docker-compose.yml files to be used
 export COMPOSE_FILE="${COMPOSE_FILE:-$(get_docker_compose_files)}"
