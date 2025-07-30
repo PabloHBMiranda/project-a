@@ -4,6 +4,11 @@ global:
 
 log:
   level: DEBUG
+  format: common
+  filePath: /var/log/traefik.log
+
+accessLog:
+  format: common
 
 entryPoints:
   http:
@@ -24,7 +29,7 @@ providers:
     endpoint: "unix:///var/run/docker.sock" # use docker socket
     exposedByDefault: false
   file:
-    filename: /etc/traefik/dynamic.yml  # só se você estiver usando mesmo
+    filename: /etc/traefik/config/dynamic.yml
 
 api:
   dashboard: true
