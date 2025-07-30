@@ -24,7 +24,7 @@ providers:
     endpoint: "unix:///var/run/docker.sock" # use docker socket
     exposedByDefault: false
   file:
-    filename: ./dynamic.yml  # só se você estiver usando mesmo
+    filename: /etc/traefik/dynamic.yml  # só se você estiver usando mesmo
 
 api:
   dashboard: true

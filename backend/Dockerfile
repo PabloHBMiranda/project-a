@@ -48,8 +48,5 @@ RUN yarn install --frozen-lockfile --production
 # Copia apenas dist e arquivos necessários
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Exposição da porta
-EXPOSE 3001
-
 # Comando para rodar a aplicação
 CMD ["node", "dist/main.js"]

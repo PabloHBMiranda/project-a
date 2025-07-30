@@ -35,6 +35,4 @@ FROM base
 
 COPY --from=builder /usr/src/app /usr/src/app
 
-EXPOSE 3000
-
 CMD ["yarn", "start"]

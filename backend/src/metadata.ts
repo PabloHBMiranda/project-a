@@ -1,5 +1,5 @@
 /* eslint-disable */
 export default async () => {
     const t = {};
-    return { "@nestjs/swagger/plugin": { "models": [], "controllers": [] }, "@nestjs/graphql/plugin": { "models": [] } };
+    return { "@nestjs/swagger/plugin": { "models": [], "controllers": [[import("./app.controller"), { "AppController": { "getHello": { type: String } } }]] }, "@nestjs/graphql/plugin": { "models": [] } };
 };

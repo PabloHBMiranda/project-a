@@ -1,5 +1,9 @@
 services:
   backend:
+    environment:
+      - PORT=${BACKEND_PORT}
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN}`)"
@@ -8,6 +12,10 @@ services:
       - "traefik.http.services.backend.loadbalancer.server.port=${BACKEND_PORT}"
 
   frontend:
+    environment:
+      - PORT=${FRONTEND_PORT}
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
@@ -26,11 +34,9 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/data/traefik/certs:ro
-      - ./config/traefik-config.yml:/traefik-config.yml:ro
-      - ./config/dynamic.yml:/dynamic.yml:rw
-      - ./logs:/var/log/traefik:rw
+      - ./traefik/config/traefik-config.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/certs:/etc/traefik/certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - default

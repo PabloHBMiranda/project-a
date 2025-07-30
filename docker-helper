@@ -274,7 +274,6 @@ if [[ -f "$PROJECT_ROOT/$SERVER_TYPE/.env.$SERVER_TYPE" ]]; then
     )
 fi
 
-
 # List of docker-compose.yml files to be used
 export COMPOSE_FILE="${COMPOSE_FILE:-$(get_docker_compose_files)}"
 
