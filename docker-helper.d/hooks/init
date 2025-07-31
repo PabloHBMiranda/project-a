@@ -45,7 +45,7 @@ if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
 
       # Carrega as variáveis de domínio do .env.traefik para o ambiente do shell
       if [[ -f "$TRAEFIK_DIR/.env.traefik" ]]; then
-          export $(grep -E '^(FRONTEND_DOMAIN|BACKEND_DOMAIN|TRAEFIK_IMAGE_VERSION|FRONTEND_PORT|BACKEND_PORT)' "$TRAEFIK_DIR/.env.traefik" | xargs)
+          export $(grep -E '^(FRONTEND_DOMAIN|BACKEND_DOMAIN|FRONTEND_PORT|BACKEND_PORT)' "$TRAEFIK_DIR/.env.traefik" | xargs)
       fi
 
     fi
