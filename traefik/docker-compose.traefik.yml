@@ -24,12 +24,12 @@ services:
       - "traefik.http.services.frontend.loadbalancer.server.port=${FRONTEND_PORT:-3000}"
 
   traefik:
-    image: "${PROJECT_NAME}/traefik:${TRAEFIK_IMAGE_VERSION:?}"
+    image: "${PROJECT_NAME}/traefik:${BACKEND_IMAGE_VERSION}"
     build:
       context: ./traefik
       dockerfile: Dockerfile
     container_name: "${PROJECT_NAME}-traefik"
-    entrypoint: ["/etc/traefik/server-conf/traefik-entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/etc/traefik/server-conf/traefik-entrypoint.sh"]
     env_file:
       - ./traefik/.env.traefik
     depends_on:
@@ -41,10 +41,10 @@ services:
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik/config/traefik.yml:/etc/traefik/config/traefik.yml:ro
-      - ./traefik/config/dynamic.yml:/etc/traefik/config/dynamic.yml:ro
-      - ./traefik/server-conf/traefik-entrypoint.sh:/etc/traefik/server-conf/traefik-entrypoint.sh
+      - ./traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/server-conf/traefik-entrypoint.sh:/etc/traefik/server-conf/traefik-entrypoint.sh:ro
       - ./data/traefik/certs:/etc/traefik/certs
-      - ./data/traefik/log:/var/log
+      
     networks:
       - default

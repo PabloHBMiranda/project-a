@@ -34,6 +34,20 @@ if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
               -subj "/C=BR/ST=GO/L=Goiânia/O=NúcleoGov/CN=$SERVER_HOST/emailAddress=contato@$SERVER_HOST" \
               -keyout "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.key" -out "$PROJECT_ROOT/nginx/server-conf/ssl/self-signed.crt"
       fi
+    else
+      # Gera as chaves para a conexão SSL do Traefik
+      TRAEFIK_DIR="$PROJECT_ROOT/traefik"
+
+      # Inicializa o .env.traefik
+      if [[ ! -f "$TRAEFIK_DIR/.env.traefik" && -f "$TRAEFIK_DIR/.env.example" ]]; then
+          cp -a "$TRAEFIK_DIR/.env.example" "$TRAEFIK_DIR/.env.traefik"
+      fi
+
+      # Carrega as variáveis de domínio do .env.traefik para o ambiente do shell
+      if [[ -f "$TRAEFIK_DIR/.env.traefik" ]]; then
+          export $(grep -E '^(FRONTEND_DOMAIN|BACKEND_DOMAIN|TRAEFIK_IMAGE_VERSION|FRONTEND_PORT|BACKEND_PORT)' "$TRAEFIK_DIR/.env.traefik" | xargs)
+      fi
+
     fi
 
     # Habilita o novo formato de build do docker
