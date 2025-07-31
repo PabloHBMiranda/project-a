@@ -37,32 +37,17 @@ if [[ "$DOCKER_ENV" == "local" || "$DOCKER_ENV" == "testing" ]]; then
     else
       # Gera as chaves para a conexão SSL do Traefik
       TRAEFIK_DIR="$PROJECT_ROOT/traefik"
-      CERTS_DIR="$TRAEFIK_DIR/certs"
-      CERT_FILE="$CERTS_DIR/cert.pem"
-      KEY_FILE="$CERTS_DIR/key.pem"
 
-      mkdir -p "$CERTS_DIR"
-
-      if ! command -v mkcert &> /dev/null; then
-          echo "mkcert não encontrado. Instalando..."
-          sudo apt update
-          sudo apt install -y libnss3-tools curl
-          MKCERT_VERSION="v1.4.4"
-          curl -LO "https://github.com/FiloSottile/mkcert/releases/download/${MKCERT_VERSION}/mkcert-${MKCERT_VERSION}-linux-amd64"
-          sudo mv "mkcert-${MKCERT_VERSION}-linux-amd64" /usr/local/bin/mkcert
-          sudo chmod +x /usr/local/bin/mkcert
+      # Inicializa o .env.traefik
+      if [[ ! -f "$TRAEFIK_DIR/.env.traefik" && -f "$TRAEFIK_DIR/.env.example" ]]; then
+          cp -a "$TRAEFIK_DIR/.env.example" "$TRAEFIK_DIR/.env.traefik"
       fi
 
-      if [ ! -d "$HOME/.local/share/mkcert" ] && [ ! -d "$HOME/Library/Application Support/mkcert" ]; then
-          echo "Configurando CA local do mkcert..."
-          mkcert -install
+      # Carrega as variáveis de domínio do .env.traefik para o ambiente do shell
+      if [[ -f "$TRAEFIK_DIR/.env.traefik" ]]; then
+          export $(grep -E '^(FRONTEND_DOMAIN|BACKEND_DOMAIN|TRAEFIK_IMAGE_VERSION|FRONTEND_PORT|BACKEND_PORT)' "$TRAEFIK_DIR/.env.traefik" | xargs)
       fi
 
-      if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
-          echo "Gerando certificados para $BACKEND_DOMAIN e $FRONTEND_DOMAIN..."
-          mkcert -cert-file "$CERT_FILE" -key-file "$KEY_FILE" "$BACKEND_DOMAIN" "$FRONTEND_DOMAIN"
-          echo "Certificados gerados em $CERTS_DIR"
-      fi
     fi
 
     # Habilita o novo formato de build do docker

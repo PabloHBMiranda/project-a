@@ -3,7 +3,8 @@ global:
   sendAnonymousUsage: false
 
 log:
-  level: DEBUG
+  level: INFO
+  format: common
 
 entryPoints:
   http:
@@ -11,20 +12,18 @@ entryPoints:
     http:
       redirections:
         entryPoint:
-          to: https
+          to: websecure
           scheme: https
   websecure:
     address: ":443"
 
-serversTransport:
-  insecureSkipVerify: true
-
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock" # use docker socket
+    endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
   file:
-    filename: /etc/traefik/dynamic.yml  # só se você estiver usando mesmo
+    filename: /etc/traefik/dynamic.yml
+    watch: true
 
 api:
   dashboard: true

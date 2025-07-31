@@ -1,31 +1,37 @@
 services:
   backend:
     environment:
-      - PORT=${BACKEND_PORT}
+      - PORT=${BACKEND_PORT:-3001}
     ports:
-      - "${BACKEND_PORT}:${BACKEND_PORT}"
+      - "${BACKEND_PORT:-3001}:${BACKEND_PORT:-3001}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`${BACKEND_DOMAIN}`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.services.backend.loadbalancer.server.port=${BACKEND_PORT}"
+      - "traefik.http.services.backend.loadbalancer.server.port=${BACKEND_PORT:-3001}"
 
   frontend:
     environment:
-      - PORT=${FRONTEND_PORT}
+      - PORT=${FRONTEND_PORT:-3000}
     ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+      - "${FRONTEND_PORT:-3000}:${FRONTEND_PORT:-3000}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.services.frontend.loadbalancer.server.port=${FRONTEND_PORT}"
+      - "traefik.http.services.frontend.loadbalancer.server.port=${FRONTEND_PORT:-3000}"
 
   traefik:
-    image: traefik:v3.5
+    image: "${PROJECT_NAME}/traefik:${BACKEND_IMAGE_VERSION}"
+    build:
+      context: ./traefik
+      dockerfile: Dockerfile
     container_name: "${PROJECT_NAME}-traefik"
+    entrypoint: ["/bin/sh", "/etc/traefik/server-conf/traefik-entrypoint.sh"]
+    env_file:
+      - ./traefik/.env.traefik
     depends_on:
       - backend
       - frontend
@@ -34,9 +40,11 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
-      - ./traefik/config/traefik-config.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - ./traefik/certs:/etc/traefik/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/server-conf/traefik-entrypoint.sh:/etc/traefik/server-conf/traefik-entrypoint.sh:ro
+      - ./data/traefik/certs:/etc/traefik/certs
+      
     networks:
       - default
